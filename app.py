@@ -8,7 +8,7 @@ st.set_page_config(page_title="MusicKit", layout="wide")
 
 
 @dataclass(frozen=True)
-class Metadata:
+class LibraryMetadata:
     total_duration: str
     total_songs: str
     favourite_genre: str
@@ -25,7 +25,7 @@ keys = {
     "Total Time",
 }
 
-library = st.file_uploader("Library", accept_multiple_files=False)
+library = st.file_uploader("Library", type="xml", accept_multiple_files=False)
 
 if library:
     plist = plistlib.loads(library.getvalue())
@@ -46,10 +46,12 @@ if library:
         lambda ms: f"{ms // 60000}:{(ms % 60000) // 1000:02}"
     )
 
+    tracks["Release Date"] = pd.to_datetime(tracks["Release Date"]).dt.date
+
     updated_at: datetime.datetime = plist["Date"]
     updated_at: str = f'Updated at: {updated_at.date().strftime("%d %b %Y")}'
 
-    metadata = Metadata(
+    metadata = LibraryMetadata(
         total_songs=total_songs,
         total_duration=total_duration,
         favourite_genre=favourite_genre,
@@ -57,13 +59,17 @@ if library:
         updated_at=updated_at,
     )
 
-    st.info(metadata.updated_at)
-    st.divider()
-
-    columns = st.columns(4)
+    columns = st.columns([1, 2, 3, 3])
     columns[0].metric("Songs", metadata.total_songs)
     columns[1].metric("Total Duration", metadata.total_duration)
     columns[2].metric("Favourite Genre", metadata.favourite_genre)
     columns[3].metric("Favourite Artist", metadata.favourite_artist)
 
-    st.dataframe(tracks)
+    st.dataframe(tracks, hide_index=True)
+
+    st.divider()
+
+    st.bar_chart(tracks["Genre"].value_counts().head(10), horizontal=True)
+    st.bar_chart(tracks["Artist"].value_counts().head(10), horizontal=True)
+
+    st.info(metadata.updated_at)
