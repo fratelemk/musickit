@@ -1,0 +1,25 @@
+{
+  "name": "parcel-react-client-starter",
+  "private": true,
+  "version": "0.0.0",
+  "source": "src/index.html",
+  "scripts": {
+    "start": "parcel",
+    "build": "parcel build",
+    "server": "node server.js"
+  },
+  "dependencies": {
+    "@tailwindcss/postcss": "^4.2.4",
+    "plist": "^3.1.0",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "tailwindcss": "^4.2.4"
+  },
+  "devDependencies": {
+    "@parcel/packager-xml": "^2.16.4",
+    "@parcel/transformer-inline-string": "^2.16.4",
+    "@parcel/transformer-xml": "^2.16.4",
+    "buffer": "^6.0.3",
+    "parcel": "^2.14.0"
+  }
+}
