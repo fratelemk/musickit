@@ -30,6 +30,12 @@ async function setVolume(value) {
   return v;
 }
 
+async function playTrack(databaseId) {
+  const id = parseInt(databaseId, 10);
+  if (!Number.isFinite(id)) throw new Error('invalid track id');
+  await osa(`tell application "Music" to play (first track whose database ID is ${id})`);
+}
+
 const ACTIONS = {
   next: 'tell application "Music" to next track',
   previous: 'tell application "Music" to previous track',
@@ -53,6 +59,16 @@ const server = createServer(async (req, res) => {
       res.writeHead(200, { ...cors, 'Content-Type': 'application/json' });
       res.end(JSON.stringify(data));
       return;
+    }
+    if (req.method === 'POST' && req.url?.startsWith('/play-track')) {
+      const url = new URL(req.url, 'http://x');
+      const id = url.searchParams.get('id');
+      if (id) {
+        await playTrack(id);
+        res.writeHead(204, cors);
+        res.end();
+        return;
+      }
     }
     if (req.method === 'POST' && req.url?.startsWith('/volume')) {
       const url = new URL(req.url, 'http://x');
