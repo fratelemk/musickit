@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Library</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Lucida Grande", "Lucida Sans Unicode", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    color: #000;
+    background: repeating-linear-gradient(
+      to bottom,
+      #e8e8e8 0px,
+      #e8e8e8 2px,
+      #dcdcdc 2px,
+      #dcdcdc 4px
+    );
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+
+  .window {
+    width: min(900px, 100%);
+    height: min(640px, calc(100vh - 48px));
+    background: #eee;
+    border: 1px solid #888;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .titlebar {
+    height: 22px;
+    flex: none;
+    background: linear-gradient(to bottom, #f6f6f6, #d0d0d0);
+    border-bottom: 1px solid #999;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    position: relative;
+  }
+
+  .lights {
+    display: flex;
+    gap: 7px;
+  }
+
+  .light {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+  }
+
+  .light.red    { background: radial-gradient(circle at 35% 30%, #ffb3ab, #f95951 60%, #c33); }
+  .light.yellow { background: radial-gradient(circle at 35% 30%, #ffe9a8, #f5bd39 60%, #c99117); }
+  .light.green  { background: radial-gradient(circle at 35% 30%, #c4f2b2, #57c832 60%, #2f8f14); }
+
+  .titlebar .title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: #444;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+  }
+
+  .toolbar {
+    flex: none;
+    background: repeating-linear-gradient(
+      to bottom,
+      #f4f4f4 0px,
+      #f4f4f4 2px,
+      #ebebeb 2px,
+      #ebebeb 4px
+    );
+    border-bottom: 1px solid #aaa;
+    padding: 8px 12px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+
+  .toolbar a {
+    font-size: 11px;
+    color: #33c;
+    text-decoration: none;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  .toolbar a:hover {
+    text-decoration: underline;
+  }
+
+  input[type="search"] {
+    font-family: inherit;
+    font-size: 12px;
+    width: 200px;
+    padding: 3px 12px;
+    border: 1px solid #999;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+    outline: none;
+  }
+
+  input[type="search"]:focus {
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2), 0 0 0 3px rgba(120, 170, 230, 0.6);
+  }
+
+  .list {
+    flex: 1;
+    overflow-y: scroll;
+    background: #fff;
+  }
+
+  /* Aqua scrollbar — always visible */
+  .list::-webkit-scrollbar {
+    width: 16px;
+    background: #f0f0f0;
+  }
+
+  .list::-webkit-scrollbar-track {
+    background: linear-gradient(
+      to right,
+      #b8b8b8 0%,
+      #e6e6e6 25%,
+      #f6f6f6 60%,
+      #dfdfdf 100%
+    );
+    border-left: 1px solid #a8a8a8;
+    box-shadow: inset 2px 0 3px rgba(0, 0, 0, 0.12);
+  }
+
+  .list::-webkit-scrollbar-thumb {
+    border-radius: 8px;
+    border: 1px solid #46688f;
+    background: linear-gradient(
+      to right,
+      #4d8fd4 0%,
+      #a6cdf2 18%,
+      #e2f0fc 32%,
+      #8cc0ef 55%,
+      #519adf 78%,
+      #7db4ea 100%
+    );
+    box-shadow: inset 0 0 2px rgba(255, 255, 255, 0.9);
+    min-height: 40px;
+  }
+
+  .list::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(
+      to right,
+      #5f9cda 0%,
+      #b4d7f5 18%,
+      #ecf5fd 32%,
+      #9dcaf3 55%,
+      #63a5e4 78%,
+      #8dbeee 100%
+    );
+  }
+
+  .list::-webkit-scrollbar-thumb:active {
+    background: linear-gradient(
+      to right,
+      #3d7fc4 0%,
+      #8fbde8 18%,
+      #cfe5f9 32%,
+      #74acdf 55%,
+      #3f88cf 78%,
+      #659fd9 100%
+    );
+  }
+
+  .list::-webkit-scrollbar-button {
+    display: none;
+    height: 0;
+  }
+
+  /* Firefox only — browsers with ::-webkit-scrollbar must not see
+     scrollbar-color, it disables the custom styles above */
+  @supports not selector(::-webkit-scrollbar) {
+    .list {
+      scrollbar-width: auto;
+      scrollbar-color: #7db2e8 #e6e6e6;
+    }
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  th {
+    position: sticky;
+    top: 0;
+    background: linear-gradient(to bottom, #fafafa, #d8d8d8);
+    border-bottom: 1px solid #999;
+    border-right: 1px solid #ccc;
+    font-size: 11px;
+    font-weight: normal;
+    color: #333;
+    text-align: left;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+    padding: 3px 8px;
+  }
+
+  th:last-child {
+    border-right: none;
+  }
+
+  th.time, td.time {
+    width: 60px;
+    text-align: right;
+  }
+
+  td {
+    font-size: 12px;
+    padding: 3px 8px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  tbody tr:nth-child(even) {
+    background: #edf3fe;
+  }
+
+  tbody tr {
+    cursor: default;
+  }
+
+  tbody tr:hover {
+    background: #d8e6fb;
+  }
+
+  tbody tr.selected,
+  tbody tr.selected:hover {
+    background: linear-gradient(to bottom, #5c93d6, #3875d7);
+    color: #fff;
+  }
+
+  .statusbar {
+    flex: none;
+    height: 22px;
+    background: linear-gradient(to bottom, #f0f0f0, #d5d5d5);
+    border-top: 1px solid #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    color: #555;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <div class="titlebar">
+    <div class="lights">
+      <span class="light red"></span>
+      <span class="light yellow"></span>
+      <span class="light green"></span>
+    </div>
+    <div class="title">Library</div>
+  </div>
+
+  <div class="toolbar">
+    <a href="/">&#9664; Now Playing</a>
+    <input type="search" id="search" placeholder="Search">
+  </div>
+
+  <div class="list" id="list">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Artist</th>
+          <th>Album</th>
+          <th class="time">Time</th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+  </div>
+
+  <div class="statusbar" id="statusbar">Loading&#8230;</div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  let tracks = [];
+
+  const fmtTime = (ms) => {
+    if (!ms) return '';
+    const s = Math.round(ms / 1000);
+    return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+  };
+
+  function render(list) {
+    const tbody = $('rows');
+    tbody.textContent = '';
+    const frag = document.createDocumentFragment();
+    for (const t of list) {
+      const tr = document.createElement('tr');
+      tr.dataset.id = t.id;
+      for (const [text, cls] of [[t.name], [t.artist], [t.album], [fmtTime(t.time), 'time']]) {
+        const td = document.createElement('td');
+        td.textContent = text;
+        if (cls) td.className = cls;
+        tr.appendChild(td);
+      }
+      frag.appendChild(tr);
+    }
+    tbody.appendChild(frag);
+    $('statusbar').textContent = `${list.length} songs`;
+  }
+
+  $('rows').onclick = async (e) => {
+    const tr = e.target.closest('tr');
+    if (!tr) return;
+    document.querySelector('tr.selected')?.classList.remove('selected');
+    tr.classList.add('selected');
+    await fetch(`/play-track?id=${tr.dataset.id}`, { method: 'POST' });
+  };
+
+  $('search').oninput = (e) => {
+    const q = e.target.value.trim().toLowerCase();
+    render(
+      q
+        ? tracks.filter((t) =>
+            `${t.name} ${t.artist} ${t.album}`.toLowerCase().includes(q)
+          )
+        : tracks
+    );
+  };
+
+  fetch('/library.json')
+    .then((r) => r.json())
+    .then((data) => {
+      tracks = data;
+      render(tracks);
+    })
+    .catch(() => {
+      $('statusbar').textContent = 'failed to load library';
+    });
+</script>
+
+</body>
+</html>

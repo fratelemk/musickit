@@ -1,7 +1,7 @@
 import { createServer } from 'node:http';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 
 const run = promisify(execFile);
 const PORT = 7891;
@@ -15,6 +15,50 @@ tell application "Music"
   return (name of t) & "\\t" & (artist of t) & "\\t" & (album of t) & "\\t" & (player state as text) & "\\t" & (output volume of (get volume settings))
 end tell
 `;
+
+const LIBRARY_XML = new URL('./Library.xml', import.meta.url);
+let libraryCache = null;
+
+function decodeEntities(s) {
+  return s
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&');
+}
+
+async function library() {
+  const { mtimeMs } = await stat(LIBRARY_XML);
+  if (libraryCache && libraryCache.mtimeMs === mtimeMs) {
+    return libraryCache.tracks;
+  }
+  let xml = await readFile(LIBRARY_XML, 'utf8');
+  const start = xml.indexOf('<key>Tracks</key>');
+  const end = xml.indexOf('<key>Playlists</key>');
+  xml = xml.slice(start, end === -1 ? undefined : end);
+  const str = (body, key) => {
+    const m = body.match(new RegExp(`<key>${key}</key><string>([^<]*)</string>`));
+    return m ? decodeEntities(m[1]) : '';
+  };
+  const int = (body, key) => {
+    const m = body.match(new RegExp(`<key>${key}</key><integer>(\\d+)</integer>`));
+    return m ? Number(m[1]) : 0;
+  };
+  const tracks = [];
+  for (const m of xml.matchAll(/<dict>\s*<key>Track ID<\/key><integer>(\d+)<\/integer>([\s\S]*?)<\/dict>/g)) {
+    tracks.push({
+      id: Number(m[1]),
+      name: str(m[2], 'Name'),
+      artist: str(m[2], 'Artist'),
+      album: str(m[2], 'Album'),
+      time: int(m[2], 'Total Time'),
+    });
+  }
+  libraryCache = { mtimeMs, tracks };
+  return tracks;
+}
 
 async function nowPlaying() {
   const out = await osa(NOW_PLAYING_SCRIPT);
@@ -59,6 +103,18 @@ const server = createServer(async (req, res) => {
       const html = await readFile(new URL('./index.html', import.meta.url));
       res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
       res.end(html);
+      return;
+    }
+    if (req.method === 'GET' && req.url === '/library') {
+      const html = await readFile(new URL('./library.html', import.meta.url));
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+      return;
+    }
+    if (req.method === 'GET' && req.url === '/library.json') {
+      const tracks = await library();
+      res.writeHead(200, { ...cors, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(tracks));
       return;
     }
     if (req.method === 'GET' && req.url === '/now-playing') {
