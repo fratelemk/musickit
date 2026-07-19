@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Playlist Builder — Designs 5–8 (with player)</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Lucida Grande", "Lucida Sans Unicode", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    color: #000;
+    background: repeating-linear-gradient(to bottom, #e8e8e8 0px, #e8e8e8 2px, #dcdcdc 2px, #dcdcdc 4px);
+    min-height: 100vh;
+    padding: 30px;
+  }
+
+  h1 {
+    font-size: 16px;
+    text-align: center;
+    color: #333;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+    margin-bottom: 24px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(440px, 1fr));
+    gap: 34px;
+    max-width: 1150px;
+    margin: 0 auto;
+  }
+
+  .option { text-align: center; }
+  .option .label {
+    font-size: 12px; font-weight: bold; color: #444;
+    margin-bottom: 10px;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+  }
+
+  /* ---------- shared ---------- */
+  .win {
+    border: 1px solid #888;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.3);
+    overflow: hidden;
+    text-align: left;
+    background: #eee;
+  }
+
+  .tb {
+    height: 20px;
+    display: flex; align-items: center;
+    padding: 0 7px;
+    position: relative;
+    border-bottom: 1px solid #999;
+    background: linear-gradient(to bottom, #f6f6f6, #d0d0d0);
+  }
+  .tb .t {
+    position: absolute; left: 0; right: 0;
+    text-align: center; font-size: 11px; color: #444;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .lights { display: flex; gap: 6px; z-index: 1; }
+  .li { width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.25); }
+  .li.r { background: radial-gradient(circle at 35% 30%, #ffb3ab, #f95951 60%, #c33); }
+  .li.y { background: radial-gradient(circle at 35% 30%, #ffe9a8, #f5bd39 60%, #c99117); }
+  .li.g { background: radial-gradient(circle at 35% 30%, #c4f2b2, #57c832 60%, #2f8f14); }
+
+  .row {
+    font-size: 11px; padding: 2px 7px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .row:nth-child(even) { background: #edf3fe; }
+  .row.grabbed { opacity: 0.5; }
+  .row.playing { background: linear-gradient(to bottom, #5c93d6, #3875d7); color: #fff; }
+
+  .pinstripe {
+    background: repeating-linear-gradient(to bottom, #f4f4f4 0px, #f4f4f4 2px, #ebebeb 2px, #ebebeb 4px);
+  }
+
+  .pane-h {
+    font-size: 10px; font-weight: normal; color: #333;
+    background: linear-gradient(to bottom, #fafafa, #d8d8d8);
+    border-bottom: 1px solid #999;
+    padding: 2px 7px;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+    display: block;
+  }
+
+  .save {
+    font-family: inherit; font-size: 11px;
+    padding: 3px 14px;
+    border: 1px solid #4b6d94; border-radius: 11px;
+    background: linear-gradient(to bottom, #cde5fa 0%, #8fc0ee 45%, #5b9fe0 50%, #a8d4f5 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.8), 0 1px 2px rgba(0,0,0,0.2);
+    color: #123; cursor: pointer;
+  }
+
+  .btn {
+    font-family: inherit; font-size: 11px;
+    width: 32px; height: 20px;
+    border: 1px solid #7a7a7a; border-radius: 10px;
+    background: linear-gradient(to bottom, #fdfdfd 0%, #e8e8e8 45%, #d2d2d2 50%, #e5e5e5 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 1px rgba(0,0,0,0.15);
+    cursor: pointer; color: #222;
+  }
+  .btn.play {
+    width: 40px;
+    border-color: #4b6d94;
+    background: linear-gradient(to bottom, #cde5fa 0%, #8fc0ee 45%, #5b9fe0 50%, #a8d4f5 100%);
+    color: #123;
+  }
+
+  .lcd {
+    flex: 1;
+    height: 32px;
+    border: 1px solid #8a9a80;
+    border-radius: 5px;
+    background: linear-gradient(to bottom, #dfe8d3, #eef3e4 40%, #e4ecd6);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.25);
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    overflow: hidden;
+    padding: 0 10px;
+  }
+  .lcd .n {
+    font-size: 11px; color: #3a4a33;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+  }
+  .lcd .a { font-size: 9px; color: #6a7a60; }
+
+  .vol {
+    -webkit-appearance: none; appearance: none;
+    width: 70px; height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to bottom, #b0b0b0, #d8d8d8);
+    border: 1px solid #999; outline: none;
+  }
+  .vol::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 13px; height: 13px; border-radius: 50%;
+    border: 1px solid #666;
+    background: radial-gradient(circle at 35% 30%, #fff, #d5d5d5 70%, #b5b5b5);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+
+  /* ---------- 5. aqua + iTunes-style top bar ---------- */
+  .d5 .topbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #aaa;
+  }
+  .d5 .panes { display: flex; gap: 10px; padding: 10px; }
+  .d5 .pane {
+    flex: 1; background: #fff; height: 130px; overflow: hidden;
+    border: 1px solid #aaa;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .d5 .drop { border: 2px dashed #7db2e8; background: #f2f8ff; }
+  .d5 .foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 10px; border-top: 1px solid #aaa;
+  }
+  .d5 .count { font-size: 10px; color: #777; }
+
+  /* ---------- 6. brushed metal + round transport + oval LCD ---------- */
+  .d6.win {
+    border-radius: 10px; border-color: #666;
+    background:
+      repeating-linear-gradient(to bottom, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px, rgba(0,0,0,0.045) 1px, rgba(0,0,0,0.045) 2px),
+      linear-gradient(to bottom, #d4d4d4, #b8b8b8 50%, #c8c8c8);
+  }
+  .d6 .tb { background: transparent; border-bottom: none; height: 22px; }
+  .d6 .topbar { display: flex; align-items: center; gap: 12px; padding: 2px 14px 8px; }
+  .d6 .rbtn {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 1px solid #777;
+    background: radial-gradient(circle at 35% 30%, #fdfdfd, #cfcfcf 60%, #a8a8a8);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.9);
+    font-size: 10px; color: #333; cursor: pointer;
+  }
+  .d6 .rbtn.play { width: 34px; height: 34px; font-size: 13px; }
+  .d6 .lcd { border-radius: 16px; }
+  .d6 .panes { display: flex; gap: 12px; padding: 0 14px 10px; }
+  .d6 .pane {
+    flex: 1; background: #fff; height: 120px; overflow: hidden;
+    border: 1px solid #777; border-radius: 4px;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.35);
+  }
+  .d6 .foot { display: flex; justify-content: center; padding: 0 14px 12px; }
+  .d6 .save { border-radius: 4px; border-color: #777; background: linear-gradient(to bottom, #f2f2f2, #c9c9c9); color: #222; }
+
+  /* ---------- 7. vertical tray + bottom control strip ---------- */
+  .d7 .pane {
+    background: #fff; margin: 10px 10px 0;
+    border: 1px solid #aaa;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+    height: 96px; overflow: hidden;
+  }
+  .d7 .tray {
+    margin: 10px;
+    height: 56px;
+    border: 2px dashed #999; border-radius: 6px;
+    background: linear-gradient(to bottom, #e8eef7, #dbe6f5);
+    display: flex; align-items: center; justify-content: center;
+    gap: 6px; flex-wrap: wrap; padding: 6px;
+  }
+  .d7 .chip {
+    font-size: 10px;
+    background: linear-gradient(to bottom, #fdfdfd, #dfe8f5);
+    border: 1px solid #8aa5c8; border-radius: 9px;
+    padding: 1px 8px;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.15);
+  }
+  .d7 .strip {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 12px;
+    border-top: 1px solid #aaa;
+    background: linear-gradient(to bottom, #f0f0f0, #d5d5d5);
+  }
+  .d7 .np { flex: 1; font-size: 10px; color: #555; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+  /* ---------- 8. builder + floating mini player ---------- */
+  .d8 { position: relative; padding-top: 34px; }
+  .d8 .win.main .panes { display: flex; gap: 10px; padding: 10px; }
+  .d8 .win.main .pane {
+    flex: 1; background: #fff; height: 140px; overflow: hidden;
+    border: 1px solid #aaa;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.15);
+  }
+  .d8 .foot {
+    display: flex; justify-content: flex-end;
+    padding: 8px 10px; border-top: 1px solid #aaa;
+  }
+  .d8 .mini {
+    position: absolute;
+    top: 0; right: 16px;
+    width: 250px;
+    z-index: 2;
+    border: 1px solid #888;
+    border-radius: 7px 7px 0 0;
+    background: #eee;
+    box-shadow: 0 10px 24px rgba(0,0,0,0.4);
+    overflow: hidden;
+  }
+  .d8 .mini .body {
+    display: flex; align-items: center; gap: 6px;
+    padding: 7px 9px;
+  }
+  .d8 .mini .lcd { height: 26px; }
+  .d8 .mini .lcd .n { font-size: 9px; }
+</style>
+</head>
+<body>
+
+<h1>Designs 5&ndash;8 — with player controls</h1>
+
+<div class="grid">
+
+  <!-- 5 -->
+  <div class="option">
+    <div class="label">5. Aqua two-pane + iTunes top bar (transport, LCD, volume)</div>
+    <div class="win d5">
+      <div class="tb">
+        <div class="lights"><span class="li r"></span><span class="li y"></span><span class="li g"></span></div>
+        <div class="t">Playlist Builder</div>
+      </div>
+      <div class="topbar pinstripe">
+        <button class="btn">&#9198;</button>
+        <button class="btn play">&#9654;</button>
+        <button class="btn">&#9197;</button>
+        <div class="lcd">
+          <div class="n">Dreams — Fleetwood Mac</div>
+          <div class="a">Rumours</div>
+        </div>
+        <input type="range" class="vol">
+      </div>
+      <div class="panes pinstripe">
+        <div class="pane">
+          <span class="pane-h">Library</span>
+          <div class="row">The Chain — Fleetwood Mac</div>
+          <div class="row playing">&#9654; Dreams — Fleetwood Mac</div>
+          <div class="row grabbed">Everlong — Foo Fighters ⠿</div>
+          <div class="row">Nikes — Frank Ocean</div>
+          <div class="row">Redbone — Childish Gambino</div>
+        </div>
+        <div class="pane drop">
+          <span class="pane-h">My Playlist</span>
+          <div class="row">1. Everlong — Foo Fighters</div>
+          <div class="row">2. Nikes — Frank Ocean</div>
+        </div>
+      </div>
+      <div class="foot pinstripe">
+        <span class="count">2 songs — 8:12</span>
+        <button class="save">Save CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <div class="option">
+    <div class="label">6. Brushed metal — round metal transport + oval LCD (iTunes 4)</div>
+    <div class="win d6">
+      <div class="tb">
+        <div class="lights"><span class="li r"></span><span class="li y"></span><span class="li g"></span></div>
+        <div class="t">Playlist Builder</div>
+      </div>
+      <div class="topbar">
+        <button class="rbtn">&#9198;</button>
+        <button class="rbtn play">&#9654;</button>
+        <button class="rbtn">&#9197;</button>
+        <div class="lcd">
+          <div class="n">Dreams — Fleetwood Mac</div>
+          <div class="a">3:12 of 4:14</div>
+        </div>
+      </div>
+      <div class="panes">
+        <div class="pane">
+          <span class="pane-h">Library</span>
+          <div class="row playing">&#9654; Dreams — Fleetwood Mac</div>
+          <div class="row">Bandido — Myke Towers</div>
+          <div class="row grabbed">Everlong — Foo Fighters ⠿</div>
+          <div class="row">Nikes — Frank Ocean</div>
+        </div>
+        <div class="pane">
+          <span class="pane-h">My Playlist</span>
+          <div class="row">1. The Chain — Fleetwood Mac</div>
+        </div>
+      </div>
+      <div class="foot">
+        <button class="save">Save CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7 -->
+  <div class="option">
+    <div class="label">7. Vertical tray + bottom control strip (status-bar player)</div>
+    <div class="win d7">
+      <div class="tb">
+        <div class="lights"><span class="li r"></span><span class="li y"></span><span class="li g"></span></div>
+        <div class="t">Playlist Builder</div>
+      </div>
+      <div class="pinstripe">
+        <div class="pane">
+          <div class="row">The Chain — Fleetwood Mac</div>
+          <div class="row playing">&#9654; Dreams — Fleetwood Mac</div>
+          <div class="row grabbed">Everlong — Foo Fighters ⠿</div>
+          <div class="row">Nikes — Frank Ocean</div>
+        </div>
+        <div class="tray">
+          <span class="chip">Everlong ✕</span>
+          <span class="chip">Nikes ✕</span>
+          <span style="font-size:10px;color:#88a;">drop songs here</span>
+        </div>
+      </div>
+      <div class="strip">
+        <button class="btn">&#9198;</button>
+        <button class="btn play">&#10074;&#10074;</button>
+        <button class="btn">&#9197;</button>
+        <span class="np">&#9654; Dreams — Fleetwood Mac</span>
+        <input type="range" class="vol">
+        <button class="save">Save CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 8 -->
+  <div class="option">
+    <div class="label">8. Builder + floating mini player window (iTunes mini)</div>
+    <div class="d8">
+      <div class="mini">
+        <div class="tb">
+          <div class="lights"><span class="li r"></span><span class="li y"></span><span class="li g"></span></div>
+        </div>
+        <div class="body">
+          <button class="btn">&#9198;</button>
+          <button class="btn play">&#9654;</button>
+          <button class="btn">&#9197;</button>
+          <div class="lcd">
+            <div class="n">Dreams — Fleetwood Mac</div>
+          </div>
+        </div>
+      </div>
+      <div class="win main">
+        <div class="tb">
+          <div class="lights"><span class="li r"></span><span class="li y"></span><span class="li g"></span></div>
+          <div class="t">Playlist Builder</div>
+        </div>
+        <div class="panes pinstripe">
+          <div class="pane">
+            <span class="pane-h">Library</span>
+            <div class="row">The Chain — Fleetwood Mac</div>
+            <div class="row playing">&#9654; Dreams — Fleetwood Mac</div>
+            <div class="row grabbed">Everlong — Foo Fighters ⠿</div>
+            <div class="row">Nikes — Frank Ocean</div>
+            <div class="row">Redbone — Childish Gambino</div>
+            <div class="row">Time — Pink Floyd</div>
+          </div>
+          <div class="pane">
+            <span class="pane-h">My Playlist</span>
+            <div class="row">1. Nikes — Frank Ocean</div>
+            <div class="row">2. Time — Pink Floyd</div>
+          </div>
+        </div>
+        <div class="foot pinstripe">
+          <button class="save">Save CSV</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
