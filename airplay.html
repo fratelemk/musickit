@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AirPlay</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Lucida Grande", "Lucida Sans Unicode", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    color: #000;
+    background: repeating-linear-gradient(
+      to bottom,
+      #e8e8e8 0px,
+      #e8e8e8 2px,
+      #dcdcdc 2px,
+      #dcdcdc 4px
+    );
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .window {
+    width: 420px;
+    background: #eee;
+    border: 1px solid #888;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+
+  .titlebar {
+    height: 22px;
+    background: linear-gradient(to bottom, #f6f6f6, #d0d0d0);
+    border-bottom: 1px solid #999;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    position: relative;
+  }
+
+  .lights {
+    display: flex;
+    gap: 7px;
+  }
+
+  .light {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+  }
+
+  .light.red    { background: radial-gradient(circle at 35% 30%, #ffb3ab, #f95951 60%, #c33); }
+  .light.yellow { background: radial-gradient(circle at 35% 30%, #ffe9a8, #f5bd39 60%, #c99117); }
+  .light.green  { background: radial-gradient(circle at 35% 30%, #c4f2b2, #57c832 60%, #2f8f14); }
+
+  .titlebar .title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: #444;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+  }
+
+  .content {
+    background: repeating-linear-gradient(
+      to bottom,
+      #f4f4f4 0px,
+      #f4f4f4 2px,
+      #ebebeb 2px,
+      #ebebeb 4px
+    );
+    padding: 16px 20px 20px;
+  }
+
+  .hint {
+    font-size: 10px;
+    color: #888;
+    text-align: center;
+    margin-bottom: 12px;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+  }
+
+  .device {
+    background: #fff;
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.08);
+    padding: 10px 12px;
+    margin-bottom: 10px;
+  }
+
+  .device.off {
+    opacity: 0.55;
+  }
+
+  .device .top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .device .icon {
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+  }
+
+  .device .name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: bold;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .device .kind {
+    font-size: 10px;
+    color: #888;
+  }
+
+  /* Aqua checkbox */
+  input[type="checkbox"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 17px;
+    height: 17px;
+    border: 1px solid #7a7a7a;
+    border-radius: 4px;
+    background: linear-gradient(to bottom, #fdfdfd, #dcdcdc);
+    box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1), 0 1px 0 rgba(255, 255, 255, 0.8);
+    cursor: pointer;
+    position: relative;
+    flex: none;
+  }
+
+  input[type="checkbox"]:checked {
+    border-color: #4b6d94;
+    background: linear-gradient(to bottom, #cde5fa 0%, #8fc0ee 45%, #5b9fe0 50%, #a8d4f5 100%);
+  }
+
+  input[type="checkbox"]:checked::after {
+    content: "✓";
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: bold;
+    color: #123;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
+  }
+
+  input[type="checkbox"]:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  .device .vol {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    font-size: 10px;
+    color: #777;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to bottom, #b0b0b0, #d8d8d8);
+    border: 1px solid #999;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    border: 1px solid #666;
+    background: radial-gradient(circle at 35% 30%, #ffffff, #d5d5d5 70%, #b5b5b5);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+  }
+
+  input[type="range"]:disabled::-webkit-slider-thumb {
+    cursor: default;
+  }
+
+  .status {
+    text-align: center;
+    font-size: 10px;
+    color: #999;
+    min-height: 12px;
+    margin-top: 4px;
+  }
+
+  .nav {
+    text-align: center;
+    margin-top: 10px;
+  }
+
+  .nav a {
+    font-size: 11px;
+    color: #33c;
+    text-decoration: none;
+    margin: 0 8px;
+  }
+
+  .nav a:hover {
+    text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <div class="titlebar">
+    <div class="lights">
+      <span class="light red"></span>
+      <span class="light yellow"></span>
+      <span class="light green"></span>
+    </div>
+    <div class="title">AirPlay</div>
+  </div>
+  <div class="content">
+    <div class="hint">Choose speakers — check to send music there</div>
+    <div id="devices"></div>
+    <div class="status" id="status">Loading&#8230;</div>
+    <div class="nav">
+      <a href="/">&#9664; Now Playing</a>
+      <a href="/library">Library &#9654;</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+
+  const ICONS = {
+    'computer': '💻',
+    'Apple TV': '📺',
+    'AirPort Express': '📡',
+    'Bluetooth device': '🎧',
+  };
+
+  let devices = [];
+  let busy = false;
+
+  function render() {
+    const root = $('devices');
+    root.textContent = '';
+    for (const d of devices) {
+      const card = document.createElement('div');
+      card.className = 'device' + (d.available ? '' : ' off');
+
+      const top = document.createElement('div');
+      top.className = 'top';
+
+      const check = document.createElement('input');
+      check.type = 'checkbox';
+      check.checked = d.selected;
+      check.disabled = !d.available || busy;
+      check.onchange = () => toggle(d.name, check);
+
+      const icon = document.createElement('span');
+      icon.className = 'icon';
+      icon.textContent = ICONS[d.kind] || '🔊';
+
+      const name = document.createElement('span');
+      name.className = 'name';
+      name.textContent = d.name;
+
+      const kind = document.createElement('span');
+      kind.className = 'kind';
+      kind.textContent = d.available ? d.kind : `${d.kind} — unavailable`;
+
+      top.append(check, icon, name, kind);
+      card.appendChild(top);
+
+      const vol = document.createElement('div');
+      vol.className = 'vol';
+      const slider = document.createElement('input');
+      slider.type = 'range';
+      slider.min = 0;
+      slider.max = 100;
+      slider.value = d.volume;
+      slider.disabled = !d.selected;
+      let timer;
+      slider.oninput = () => {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          fetch(`/airplay/volume?name=${encodeURIComponent(d.name)}&value=${slider.value}`, { method: 'POST' });
+        }, 150);
+      };
+      vol.append('🔈', slider, '🔊');
+      card.appendChild(vol);
+
+      root.appendChild(card);
+    }
+  }
+
+  async function toggle(name, check) {
+    const wanted = devices
+      .filter((d) => (d.name === name ? check.checked : d.selected))
+      .map((d) => d.name);
+    if (!wanted.length) {
+      check.checked = true;
+      $('status').textContent = 'at least one speaker must stay selected';
+      return;
+    }
+    busy = true;
+    $('status').textContent = 'switching…';
+    try {
+      const qs = wanted.map((n) => `name=${encodeURIComponent(n)}`).join('&');
+      await fetch(`/airplay/select?${qs}`, { method: 'POST' });
+      $('status').textContent = '';
+    } catch {
+      $('status').textContent = 'failed to switch';
+    }
+    busy = false;
+    await refresh();
+  }
+
+  async function refresh() {
+    if (busy) return;
+    try {
+      const res = await fetch('/airplay.json');
+      devices = await res.json();
+      render();
+      if ($('status').textContent === 'Loading…') $('status').textContent = '';
+    } catch {
+      $('status').textContent = 'server unreachable';
+    }
+  }
+
+  refresh();
+  setInterval(refresh, 5000);
+</script>
+
+</body>
+</html>

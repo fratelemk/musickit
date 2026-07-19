@@ -81,6 +81,46 @@ async function playTrack(databaseId) {
   await osa(`tell application "Music" to play (first track whose database ID is ${id})`);
 }
 
+const AIRPLAY_SCRIPT = `
+tell application "Music"
+  set out to ""
+  repeat with d in AirPlay devices
+    set out to out & (name of d) & tab & (kind of d as text) & tab & (available of d as text) & tab & (selected of d as text) & tab & (sound volume of d as text) & linefeed
+  end repeat
+  return out
+end tell
+`;
+
+async function airplayDevices() {
+  const out = await osa(AIRPLAY_SCRIPT);
+  return out
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [name, kind, available, selected, volume] = line.split('\t');
+      return {
+        name,
+        kind,
+        available: available === 'true',
+        selected: selected === 'true',
+        volume: Number(volume),
+      };
+    });
+}
+
+const escAS = (s) => s.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+
+async function selectAirplay(names) {
+  const list = names.map((n) => `AirPlay device "${escAS(n)}"`).join(', ');
+  await osa(`tell application "Music" to set current AirPlay devices to {${list}}`);
+}
+
+async function airplayVolume(name, value) {
+  const v = Math.max(0, Math.min(100, Math.round(value)));
+  await osa(`tell application "Music" to set sound volume of AirPlay device "${escAS(name)}" to ${v}`);
+  return v;
+}
+
 const ACTIONS = {
   next: 'tell application "Music" to next track',
   previous: 'tell application "Music" to previous track',
@@ -116,6 +156,39 @@ const server = createServer(async (req, res) => {
       res.writeHead(200, { ...cors, 'Content-Type': 'application/json' });
       res.end(JSON.stringify(tracks));
       return;
+    }
+    if (req.method === 'GET' && req.url === '/airplay') {
+      const html = await readFile(new URL('./airplay.html', import.meta.url));
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+      return;
+    }
+    if (req.method === 'GET' && req.url === '/airplay.json') {
+      const devices = await airplayDevices();
+      res.writeHead(200, { ...cors, 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(devices));
+      return;
+    }
+    if (req.method === 'POST' && req.url?.startsWith('/airplay/select')) {
+      const url = new URL(req.url, 'http://x');
+      const names = url.searchParams.getAll('name').filter(Boolean);
+      if (names.length) {
+        await selectAirplay(names);
+        res.writeHead(204, cors);
+        res.end();
+        return;
+      }
+    }
+    if (req.method === 'POST' && req.url?.startsWith('/airplay/volume')) {
+      const url = new URL(req.url, 'http://x');
+      const name = url.searchParams.get('name');
+      const value = Number(url.searchParams.get('value'));
+      if (name && Number.isFinite(value)) {
+        const v = await airplayVolume(name, value);
+        res.writeHead(200, { ...cors, 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ volume: v }));
+        return;
+      }
     }
     if (req.method === 'GET' && req.url === '/now-playing') {
       const data = await nowPlaying();
