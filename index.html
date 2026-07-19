@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Music</title>
+<style>
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  body {
+    font-family: "Lucida Grande", "Lucida Sans Unicode", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    color: #000;
+    background: repeating-linear-gradient(
+      to bottom,
+      #e8e8e8 0px,
+      #e8e8e8 2px,
+      #dcdcdc 2px,
+      #dcdcdc 4px
+    );
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .window {
+    width: 360px;
+    background: #eee;
+    border: 1px solid #888;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+    overflow: hidden;
+  }
+
+  .titlebar {
+    height: 22px;
+    background: linear-gradient(to bottom, #f6f6f6, #d0d0d0);
+    border-bottom: 1px solid #999;
+    display: flex;
+    align-items: center;
+    padding: 0 8px;
+    position: relative;
+  }
+
+  .lights {
+    display: flex;
+    gap: 7px;
+  }
+
+  .light {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+  }
+
+  .light.red    { background: radial-gradient(circle at 35% 30%, #ffb3ab, #f95951 60%, #c33); }
+  .light.yellow { background: radial-gradient(circle at 35% 30%, #ffe9a8, #f5bd39 60%, #c99117); }
+  .light.green  { background: radial-gradient(circle at 35% 30%, #c4f2b2, #57c832 60%, #2f8f14); }
+
+  .titlebar .title {
+    position: absolute;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 12px;
+    color: #444;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+    pointer-events: none;
+  }
+
+  .content {
+    background: repeating-linear-gradient(
+      to bottom,
+      #f4f4f4 0px,
+      #f4f4f4 2px,
+      #ebebeb 2px,
+      #ebebeb 4px
+    );
+    padding: 20px 24px 24px;
+    text-align: center;
+  }
+
+  .track-name {
+    font-size: 14px;
+    font-weight: bold;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.9);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .track-meta {
+    font-size: 11px;
+    color: #555;
+    margin-top: 3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .controls {
+    margin-top: 18px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    width: 44px;
+    height: 26px;
+    border: 1px solid #7a7a7a;
+    border-radius: 13px;
+    background: linear-gradient(to bottom, #fdfdfd 0%, #e8e8e8 45%, #d2d2d2 50%, #e5e5e5 100%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 1px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    color: #222;
+  }
+
+  button:hover {
+    background: linear-gradient(to bottom, #ffffff 0%, #f0f0f0 45%, #dcdcdc 50%, #efefef 100%);
+    border-color: #666;
+  }
+
+  button:active {
+    background: linear-gradient(to bottom, #c9c9c9, #ababab);
+    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+
+  button.playpause {
+    width: 56px;
+    border-color: #4b6d94;
+    background: linear-gradient(
+      to bottom,
+      #cde5fa 0%,
+      #8fc0ee 45%,
+      #5b9fe0 50%,
+      #a8d4f5 100%
+    );
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8), 0 1px 2px rgba(0, 0, 0, 0.2);
+    color: #123;
+  }
+
+  button.playpause:hover {
+    background: linear-gradient(
+      to bottom,
+      #dcedfc 0%,
+      #a3ccf2 45%,
+      #6fabe6 50%,
+      #bcdef8 100%
+    );
+    border-color: #3d5c80;
+  }
+
+  button.playpause:active {
+    background: linear-gradient(to bottom, #7fb2e4, #4a8dcf);
+  }
+
+  button.playpause.paused {
+    border-color: #4d7d3a;
+    background: linear-gradient(
+      to bottom,
+      #d9f2c8 0%,
+      #a4dd7f 45%,
+      #74c247 50%,
+      #b8e698 100%
+    );
+    color: #1c3310;
+  }
+
+  button.playpause.paused:hover {
+    background: linear-gradient(
+      to bottom,
+      #e5f7d8 0%,
+      #b4e492 45%,
+      #85cd5b 50%,
+      #c7edac 100%
+    );
+    border-color: #3e6a2d;
+  }
+
+  button.playpause.paused:active {
+    background: linear-gradient(to bottom, #90c96c, #5ba838);
+  }
+
+  .volume {
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 11px;
+    color: #555;
+  }
+
+  input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: linear-gradient(to bottom, #b0b0b0, #d8d8d8);
+    border: 1px solid #999;
+    outline: none;
+  }
+
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid #666;
+    background: radial-gradient(circle at 35% 30%, #ffffff, #d5d5d5 70%, #b5b5b5);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    cursor: pointer;
+  }
+
+  .status {
+    margin-top: 14px;
+    font-size: 10px;
+    color: #999;
+    min-height: 12px;
+  }
+</style>
+</head>
+<body>
+
+<div class="window">
+  <div class="titlebar">
+    <div class="lights">
+      <span class="light red"></span>
+      <span class="light yellow"></span>
+      <span class="light green"></span>
+    </div>
+    <div class="title">Music</div>
+  </div>
+  <div class="content">
+    <div class="track-name" id="track">Not Playing</div>
+    <div class="track-meta" id="meta">&nbsp;</div>
+
+    <div class="controls">
+      <button id="prev" title="Previous">&#9198;</button>
+      <button class="playpause" id="playpause" title="Play/Pause">&#9199;</button>
+      <button id="next" title="Next">&#9197;</button>
+    </div>
+
+    <div class="volume">
+      <span>&#128264;</span>
+      <input type="range" id="volume" min="0" max="100" value="50">
+      <span>&#128266;</span>
+    </div>
+
+    <div class="status" id="status"></div>
+  </div>
+</div>
+
+<script>
+  const api = (path, opts) => fetch(path, opts);
+  const $ = (id) => document.getElementById(id);
+
+  async function refresh() {
+    try {
+      const res = await api('/now-playing');
+      const data = await res.json();
+      if (data.playing) {
+        $('track').textContent = data.name;
+        $('meta').textContent = `${data.artist} — ${data.album}`;
+      } else {
+        $('track').textContent = 'Not Playing';
+        $('meta').innerHTML = '&nbsp;';
+      }
+      $('playpause').classList.toggle('paused', data.state !== 'playing');
+      $('volume').value = data.volume;
+      $('status').textContent = '';
+    } catch {
+      $('status').textContent = 'server unreachable';
+    }
+  }
+
+  const post = (path) => api(path, { method: 'POST' }).then(refresh);
+
+  $('playpause').onclick = () => post('/playpause');
+  $('next').onclick = () => post('/next');
+  $('prev').onclick = () => post('/previous');
+
+  let volumeTimer;
+  $('volume').oninput = (e) => {
+    clearTimeout(volumeTimer);
+    volumeTimer = setTimeout(() => post(`/volume?value=${e.target.value}`), 150);
+  };
+
+  refresh();
+  setInterval(refresh, 3000);
+</script>
+
+</body>
+</html>

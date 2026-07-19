@@ -1,6 +1,7 @@
 import { createServer } from 'node:http';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { readFile } from 'node:fs/promises';
 
 const run = promisify(execFile);
 const PORT = 7891;
@@ -54,6 +55,12 @@ const server = createServer(async (req, res) => {
     return;
   }
   try {
+    if (req.method === 'GET' && (req.url === '/' || req.url === '/index.html')) {
+      const html = await readFile(new URL('./index.html', import.meta.url));
+      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      res.end(html);
+      return;
+    }
     if (req.method === 'GET' && req.url === '/now-playing') {
       const data = await nowPlaying();
       res.writeHead(200, { ...cors, 'Content-Type': 'application/json' });

@@ -1,15 +1,3 @@
-╭─── Claude Code v2.1.119 ─────────────────────────────────────────────────────╮
-│                                        │ Tips for getting started            │
-│           Welcome back Mihai!          │ Run /init to create a CLAUDE.md fi… │
-│                                        │ ─────────────────────────────────── │
-│                 ▐▛███▜▌                │ Recent activity                     │
-│                ▝▜█████▛▘               │ No recent activity                  │
-│                  ▘▘ ▝▝                 │                                     │
-│                                        │                                     │
-│   Opus 4.7 · Claude Team · mindit.io   │                                     │
-│          ~/Developer/musickit          │                                     │
-╰──────────────────────────────────────────────────────────────────────────────╯
-
 ❯ We need to add a file input to upload only a single XML file                  
 
   Read 1 file (ctrl+o to expand)
