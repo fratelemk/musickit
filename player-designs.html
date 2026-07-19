@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Player — AirPlay Designs P1–P4</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: "Lucida Grande", "Lucida Sans Unicode", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    color: #000;
+    background: repeating-linear-gradient(to bottom, #e8e8e8 0px, #e8e8e8 2px, #dcdcdc 2px, #dcdcdc 4px);
+    min-height: 100vh;
+    padding: 30px;
+  }
+
+  h1 {
+    font-size: 16px;
+    text-align: center;
+    color: #333;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+    margin-bottom: 24px;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(400px, 1fr));
+    gap: 40px;
+    max-width: 1000px;
+    margin: 0 auto;
+    align-items: start;
+  }
+
+  .option { text-align: center; }
+  .option .label {
+    font-size: 12px; font-weight: bold; color: #444;
+    margin-bottom: 10px;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+  }
+
+  /* ---------- shared ---------- */
+  .win {
+    width: 340px;
+    margin: 0 auto;
+    border: 1px solid #888;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 8px 22px rgba(0,0,0,0.3);
+    overflow: visible;
+    text-align: left;
+    background: #eee;
+    position: relative;
+  }
+
+  .win .clip { overflow: hidden; border-radius: 8px 8px 0 0; }
+
+  .tb {
+    height: 20px;
+    display: flex; align-items: center;
+    padding: 0 7px;
+    position: relative;
+    border-bottom: 1px solid #999;
+    background: linear-gradient(to bottom, #f6f6f6, #d0d0d0);
+  }
+  .tb .t {
+    position: absolute; left: 0; right: 0;
+    text-align: center; font-size: 11px; color: #444;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .lights { display: flex; gap: 6px; z-index: 1; }
+  .li { width: 11px; height: 11px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.25); }
+  .li.r { background: radial-gradient(circle at 35% 30%, #ffb3ab, #f95951 60%, #c33); }
+  .li.y { background: radial-gradient(circle at 35% 30%, #ffe9a8, #f5bd39 60%, #c99117); }
+  .li.g { background: radial-gradient(circle at 35% 30%, #c4f2b2, #57c832 60%, #2f8f14); }
+
+  .pinstripe {
+    background: repeating-linear-gradient(to bottom, #f4f4f4 0px, #f4f4f4 2px, #ebebeb 2px, #ebebeb 4px);
+  }
+
+  .content { padding: 16px 20px 18px; text-align: center; }
+
+  .tname {
+    font-size: 13px; font-weight: bold;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.9);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .tmeta { font-size: 10px; color: #555; margin-top: 2px; }
+
+  .controls { margin-top: 12px; display: flex; justify-content: center; gap: 8px; align-items: center; }
+
+  .btn {
+    font-family: inherit; font-size: 12px;
+    width: 40px; height: 24px;
+    border: 1px solid #7a7a7a; border-radius: 12px;
+    background: linear-gradient(to bottom, #fdfdfd 0%, #e8e8e8 45%, #d2d2d2 50%, #e5e5e5 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.9), 0 1px 1px rgba(0,0,0,0.15);
+    cursor: pointer; color: #222;
+  }
+  .btn.play {
+    width: 50px;
+    border-color: #4b6d94;
+    background: linear-gradient(to bottom, #cde5fa 0%, #8fc0ee 45%, #5b9fe0 50%, #a8d4f5 100%);
+    color: #123;
+  }
+  .btn.ap {
+    width: 30px;
+    font-size: 13px;
+  }
+  .btn.ap.on {
+    border-color: #4b6d94;
+    background: linear-gradient(to bottom, #cde5fa 0%, #8fc0ee 45%, #5b9fe0 50%, #a8d4f5 100%);
+  }
+
+  .volrow {
+    margin-top: 14px;
+    display: flex; align-items: center; gap: 8px;
+    font-size: 10px; color: #555;
+  }
+  .vol {
+    flex: 1;
+    -webkit-appearance: none; appearance: none;
+    height: 4px; border-radius: 2px;
+    background: linear-gradient(to bottom, #b0b0b0, #d8d8d8);
+    border: 1px solid #999; outline: none;
+  }
+  .vol::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 1px solid #666;
+    background: radial-gradient(circle at 35% 30%, #fff, #d5d5d5 70%, #b5b5b5);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.3);
+  }
+
+  .chk {
+    display: inline-flex;
+    width: 14px; height: 14px;
+    border: 1px solid #7a7a7a; border-radius: 3px;
+    background: linear-gradient(to bottom, #fdfdfd, #dcdcdc);
+    align-items: center; justify-content: center;
+    font-size: 10px; font-weight: bold; color: #123;
+    flex: none;
+  }
+  .chk.on {
+    border-color: #4b6d94;
+    background: linear-gradient(to bottom, #cde5fa, #8fc0ee 45%, #5b9fe0 50%, #a8d4f5);
+  }
+
+  /* ---------- P1: popup menu ---------- */
+  .p1 .menu {
+    position: absolute;
+    right: 12px;
+    bottom: -86px;
+    width: 190px;
+    background: rgba(248, 248, 252, 0.98);
+    border: 1px solid #999;
+    border-radius: 5px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.35);
+    z-index: 5;
+    padding: 4px 0;
+    text-align: left;
+  }
+  .p1 .menu::before {
+    content: "";
+    position: absolute;
+    top: -7px; right: 18px;
+    border-left: 7px solid transparent;
+    border-right: 7px solid transparent;
+    border-bottom: 7px solid #f8f8fc;
+    filter: drop-shadow(0 -1px 0 #999);
+  }
+  .p1 .mi {
+    font-size: 11px;
+    padding: 3px 10px;
+    display: flex; align-items: center; gap: 7px;
+  }
+  .p1 .mi .tick { width: 12px; color: #3875d7; font-weight: bold; }
+  .p1 .mi:hover { background: linear-gradient(to bottom, #5c93d6, #3875d7); color: #fff; }
+  .p1 .mi:hover .tick { color: #fff; }
+
+  /* ---------- P2: inline device panel ---------- */
+  .p2 .devpanel {
+    margin-top: 14px;
+    background: #fff;
+    border: 1px solid #aaa;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.08);
+    text-align: left;
+  }
+  .p2 .devpanel h4 {
+    font-size: 10px; font-weight: normal; color: #333;
+    background: linear-gradient(to bottom, #fafafa, #d8d8d8);
+    border-bottom: 1px solid #bbb;
+    border-radius: 6px 6px 0 0;
+    padding: 2px 8px;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .p2 .dev {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 11px;
+    padding: 4px 8px;
+    border-bottom: 1px solid #eee;
+  }
+  .p2 .dev:last-child { border-bottom: none; }
+  .p2 .dev .dv { width: 60px; flex: none; }
+  .p2 .dev .dv .vol { width: 100%; }
+
+  /* ---------- P3: segmented control ---------- */
+  .p3 .seg {
+    margin-top: 14px;
+    display: inline-flex;
+  }
+  .p3 .seg button {
+    font-family: inherit; font-size: 10px;
+    padding: 3px 12px;
+    border: 1px solid #7a7a7a;
+    border-left-width: 0;
+    background: linear-gradient(to bottom, #fdfdfd, #dcdcdc);
+    cursor: pointer;
+    display: flex; align-items: center; gap: 4px;
+  }
+  .p3 .seg button:first-child {
+    border-left-width: 1px;
+    border-radius: 11px 0 0 11px;
+  }
+  .p3 .seg button:last-child { border-radius: 0 11px 11px 0; }
+  .p3 .seg button.on {
+    border-color: #4b6d94;
+    background: linear-gradient(to bottom, #9dc7f0, #5b9fe0 50%, #7db4ea);
+    color: #fff;
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.25);
+  }
+  .p3 .seghint { font-size: 9px; color: #999; margin-top: 5px; }
+
+  /* ---------- P4: brushed metal + drawer ---------- */
+  .p4wrap { display: flex; justify-content: center; align-items: flex-start; }
+  .p4 {
+    width: 300px; flex: none;
+    border: 1px solid #666;
+    border-radius: 10px;
+    background:
+      repeating-linear-gradient(to bottom, rgba(255,255,255,0.06) 0px, rgba(255,255,255,0.06) 1px, rgba(0,0,0,0.045) 1px, rgba(0,0,0,0.045) 2px),
+      linear-gradient(to bottom, #d4d4d4, #b8b8b8 50%, #c8c8c8);
+    box-shadow: 0 8px 22px rgba(0,0,0,0.3);
+    z-index: 1;
+    text-align: left;
+    padding-bottom: 14px;
+  }
+  .p4 .tb { background: transparent; border-bottom: none; height: 24px; }
+  .p4 .lcd {
+    margin: 2px 14px 10px;
+    height: 34px;
+    border: 1px solid #8a9a80;
+    border-radius: 16px;
+    background: linear-gradient(to bottom, #dfe8d3, #eef3e4 40%, #e4ecd6);
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    overflow: hidden; padding: 0 12px;
+  }
+  .p4 .lcd .n { font-size: 11px; color: #3a4a33; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+  .p4 .lcd .a { font-size: 9px; color: #6a7a60; }
+  .p4 .tr { display: flex; justify-content: center; gap: 10px; }
+  .p4 .rbtn {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 1px solid #777;
+    background: radial-gradient(circle at 35% 30%, #fdfdfd, #cfcfcf 60%, #a8a8a8);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.9);
+    font-size: 10px; color: #333; cursor: pointer;
+  }
+  .p4 .rbtn.play { width: 34px; height: 34px; font-size: 13px; }
+  .p4drawer {
+    flex: none;
+    width: 170px;
+    margin-top: 16px;
+    margin-left: -8px;
+    border: 1px solid #888;
+    border-left: none;
+    border-radius: 0 6px 6px 0;
+    background: repeating-linear-gradient(to bottom, #ececec 0px, #ececec 2px, #e2e2e2 2px, #e2e2e2 4px);
+    box-shadow: 4px 6px 14px rgba(0,0,0,0.25);
+    text-align: left;
+    padding-bottom: 6px;
+  }
+  .p4drawer h4 {
+    font-size: 10px; font-weight: normal;
+    background: linear-gradient(to bottom, #f2f2f2, #d5d5d5);
+    border-bottom: 1px solid #aaa;
+    padding: 3px 8px;
+    text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+  }
+  .p4drawer .dev {
+    font-size: 10px;
+    padding: 4px 8px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .p4drawer .vol { width: 46px; flex: none; }
+</style>
+</head>
+<body>
+
+<h1>Player designs with AirPlay switching — P1&ndash;P4</h1>
+
+<div class="grid">
+
+  <!-- P1 -->
+  <div class="option" style="padding-bottom: 90px;">
+    <div class="label">P1. AirPlay popup menu — speaker button opens device menu</div>
+    <div class="win p1">
+      <div class="clip">
+        <div class="tb">
+          <div class="lights"><span class="li r"></span><span class="li y"></span><span class="li g"></span></div>
+          <div class="t">Music</div>
+        </div>
+        <div class="content pinstripe">
+          <div class="tname">Dreams</div>
+          <div class="tmeta">Fleetwood Mac — Rumours</div>
+          <div class="controls">
+            <button class="btn">&#9198;</button>
+            <button class="btn play">&#10074;&#10074;</button>
+            <button class="btn">&#9197;</button>
+            <button class="btn ap on" title="AirPlay">&#128250;</button>
+          </div>
+          <div class="volrow">🔈 <input type="range" class="vol"> 🔊</div>
+        </div>
+      </div>
+      <div class="menu">
+        <div class="mi"><span class="tick">✓</span>💻 Mihai’s MacBook Pro</div>
+        <div class="mi"><span class="tick"></span>📺 AppleTV</div>
+        <div class="mi"><span class="tick">✓</span>📺 Mihai’s MacBook Air</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- P2 -->
+  <div class="option">
+    <div class="label">P2. Inline device panel — always visible, per-device volume</div>
+    <div class="win p2">
+      <div class="clip">
+        <div class="tb">
+          <div class="lights"><span class="li r"></span><span class="li y"></span><span class="li g"></span></div>
+          <div class="t">Music</div>
+        </div>
+        <div class="content pinstripe">
+          <div class="tname">Dreams</div>
+          <div class="tmeta">Fleetwood Mac — Rumours</div>
+          <div class="controls">
+            <button class="btn">&#9198;</button>
+            <button class="btn play">&#10074;&#10074;</button>
+            <button class="btn">&#9197;</button>
+          </div>
+          <div class="volrow">🔈 <input type="range" class="vol"> 🔊</div>
+          <div class="devpanel">
+            <h4>Speakers</h4>
+            <div class="dev">
+              <span class="chk on">✓</span> 💻 <span style="flex:1">Mihai’s MacBook Pro</span>
+              <span class="dv"><input type="range" class="vol"></span>
+            </div>
+            <div class="dev">
+              <span class="chk"></span> 📺 <span style="flex:1">AppleTV</span>
+              <span class="dv"><input type="range" class="vol" disabled></span>
+            </div>
+            <div class="dev">
+              <span class="chk on">✓</span> 📺 <span style="flex:1">Mihai’s MacBook Air</span>
+              <span class="dv"><input type="range" class="vol"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- P3 -->
+  <div class="option">
+    <div class="label">P3. Segmented control — one-tap output switch (single device)</div>
+    <div class="win p3">
+      <div class="clip">
+        <div class="tb">
+          <div class="lights"><span class="li r"></span><span class="li y"></span><span class="li g"></span></div>
+          <div class="t">Music</div>
+        </div>
+        <div class="content pinstripe">
+          <div class="tname">Dreams</div>
+          <div class="tmeta">Fleetwood Mac — Rumours</div>
+          <div class="controls">
+            <button class="btn">&#9198;</button>
+            <button class="btn play">&#10074;&#10074;</button>
+            <button class="btn">&#9197;</button>
+          </div>
+          <div class="volrow">🔈 <input type="range" class="vol"> 🔊</div>
+          <div class="seg">
+            <button class="on">💻 MacBook Pro</button>
+            <button>📺 AppleTV</button>
+            <button>📺 MacBook Air</button>
+          </div>
+          <div class="seghint">⇧-click for multi-room</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- P4 -->
+  <div class="option">
+    <div class="label">P4. Brushed metal + speakers drawer (per-device volume)</div>
+    <div class="p4wrap">
+      <div class="p4">
+        <div class="tb">
+          <div class="lights"><span class="li r"></span><span class="li y"></span><span class="li g"></span></div>
+          <div class="t">Music</div>
+        </div>
+        <div class="lcd">
+          <div class="n">Dreams — Fleetwood Mac</div>
+          <div class="a">Rumours</div>
+        </div>
+        <div class="tr">
+          <button class="rbtn">&#9198;</button>
+          <button class="rbtn play">&#10074;&#10074;</button>
+          <button class="rbtn">&#9197;</button>
+        </div>
+      </div>
+      <div class="p4drawer">
+        <h4>Speakers</h4>
+        <div class="dev"><span class="chk on">✓</span> 💻 MacBook Pro</div>
+        <div class="dev" style="padding-top:0;">🔈 <input type="range" class="vol"></div>
+        <div class="dev"><span class="chk"></span> 📺 AppleTV</div>
+        <div class="dev"><span class="chk on">✓</span> 📺 MacBook Air</div>
+        <div class="dev" style="padding-top:0;">🔈 <input type="range" class="vol"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
