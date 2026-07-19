@@ -100,8 +100,20 @@
     color: #555;
     margin-top: 3px;
     overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  .track-meta span {
+    display: inline-block;
+  }
+
+  .track-meta.scrolling span {
+    animation: marquee 9s linear infinite alternate;
+  }
+
+  @keyframes marquee {
+    0%, 12% { transform: translateX(0); }
+    88%, 100% { transform: translateX(var(--scroll-dist, 0px)); }
   }
 
   .controls {
@@ -243,7 +255,7 @@
   </div>
   <div class="content">
     <div class="track-name" id="track">Not Playing</div>
-    <div class="track-meta" id="meta">&nbsp;</div>
+    <div class="track-meta" id="metaWrap"><span id="meta">&nbsp;</span></div>
 
     <div class="controls">
       <button id="prev" title="Previous">&#9198;</button>
@@ -279,12 +291,20 @@
         $('track').textContent = 'Not Playing';
         $('meta').innerHTML = '&nbsp;';
       }
+      updateMarquee();
       $('playpause').classList.toggle('paused', data.state !== 'playing');
       $('volume').value = data.volume;
       $('status').textContent = '';
     } catch {
-      $('status').textContent = 'server unreachable';
+      $('status').textContent = 'Server Unreachable';
     }
+  }
+
+  function updateMarquee() {
+    const wrap = $('metaWrap');
+    const overflow = wrap.clientWidth - $('meta').scrollWidth;
+    wrap.style.setProperty('--scroll-dist', `${Math.min(overflow, 0)}px`);
+    wrap.classList.toggle('scrolling', overflow < 0);
   }
 
   const post = (path) => api(path, { method: 'POST' }).then(refresh);
@@ -299,6 +319,7 @@
     volumeTimer = setTimeout(() => post(`/volume?value=${e.target.value}`), 150);
   };
 
+  window.onresize = updateMarquee;
   refresh();
   setInterval(refresh, 3000);
 </script>
